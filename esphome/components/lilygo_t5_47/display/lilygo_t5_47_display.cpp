@@ -68,6 +68,8 @@ void LilygoT547Display::flush_screen_changes() {
 void LilygoT547Display::on_shutdown() { eink_deinit(); }
 
 void HOT LilygoT547Display::draw_absolute_pixel_internal(int x, int y, Color color) {
+  if (x >= this->get_width_internal() || y >= this->get_height_internal() || x < 0 || y < 0)
+    return;
   bool c = convert_color(color);
   eink_set_pixel(x, y, c, fb);
 }
