@@ -580,9 +580,15 @@ class Animation : public Image {
    */
   void set_frame(int frame);
 
+  void set_loop(int start_frame, int end_frame, int count);
+
  protected:
   int current_frame_;
   int animation_frame_count_;
+  int loop_start_frame_;
+  int loop_end_frame_;
+  int loop_count_;
+  int loop_current_iteration_;
 };
 
 template<typename... Ts> class DisplayPageShowAction : public Action<Ts...> {
