@@ -51,12 +51,12 @@ void PngDecoder::prepare(WiFiClient *stream, uint32_t download_size) {
 
 size_t HOT PngDecoder::decode(HTTPClient &http, WiFiClient *stream, std::vector<uint8_t> &buf) {
   int remain = 0;
-  int total = 0;
+  int downloaded = 0;
   uint8_t *buffer = buf.data();
-  while (http.connected()) {
+  while (http.connected() && (downloaded < download_size_ || download_size_ == -1)) {
     App.feed_wdt();
     size_t size = stream->available();
-    if (!size || size < 1024 && download_size_ - total > size) {
+    if (!size || size < buf.size() / 2 && download_size_ - downloaded > size) {
       delay(10);
       continue;
     }
@@ -66,7 +66,7 @@ size_t HOT PngDecoder::decode(HTTPClient &http, WiFiClient *stream, std::vector<
     }
 
     int len = stream->readBytes(buffer + remain, size);
-    total += len;
+    downloaded += len;
     if (len > 0) {
       int fed = pngle_feed(pngle, buffer, remain + len);
       if (fed < 0) {
@@ -83,7 +83,7 @@ size_t HOT PngDecoder::decode(HTTPClient &http, WiFiClient *stream, std::vector<
     }
   }
   App.feed_wdt();
-  return total;
+  return downloaded;
 }
 
 }  // namespace online_image
