@@ -38,6 +38,9 @@ OnlineImage = online_image_ns.class_("OnlineImage", cg.PollingComponent, Image_)
 UpdateUrlAction = online_image_ns.class_(
     "OnlineImageUpdateUrlAction", automation.Action, cg.Parented.template(OnlineImage)
 )
+ReleaseImageAction = online_image_ns.class_(
+    "OnlineImageReleaseAction", automation.Action, cg.Parented.template(OnlineImage)
+)
 
 ONLINE_IMAGE_SCHEMA = cv.Schema(
     {
@@ -69,16 +72,26 @@ UPDATE_URL_SCHEMA = cv.Schema(
     }
 )
 
+RELEASE_IMAGE_SCHEMA = automation.maybe_simple_id(
+    {
+        cv.GenerateID(): cv.use_id(OnlineImage),
+    }
+)
+
 
 @automation.register_action(
     "online_image.update_url", UpdateUrlAction, UPDATE_URL_SCHEMA
+)
+@automation.register_action(
+    "online_image.release", ReleaseImageAction, RELEASE_IMAGE_SCHEMA
 )
 async def online_image_action_to_code(config, action_id, template_arg, args):
     paren = await cg.get_variable(config[CONF_ID])
     var = cg.new_Pvariable(action_id, template_arg, paren)
 
-    template_ = await cg.templatable(config[CONF_URL], args, cg.const_char_ptr)
-    cg.add(var.set_url(template_))
+    if action_id == "online_image.update_url":
+        template_ = await cg.templatable(config[CONF_URL], args, cg.const_char_ptr)
+        cg.add(var.set_url(template_))
     return var
 
 

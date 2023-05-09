@@ -76,6 +76,7 @@ void OnlineImage::release() {
     buffer_ = nullptr;
     width_ = 0;
     height_ = 0;
+    etag_ = "";
   }
 }
 
@@ -268,8 +269,8 @@ void OnlineImage::update() {
     return;
   }
 
-  const char *header_keys[] = {"Content-Type", "Content-Length"};
-  http.collectHeaders(header_keys, 2);
+  const char *header_keys[] = {"Content-Type", "Content-Length", "ETag"};
+  http.collectHeaders(header_keys, 3);
 
   int http_code = http.GET();
   if (http_code != HTTP_CODE_OK) {
@@ -279,9 +280,17 @@ void OnlineImage::update() {
   }
 
   String content_type = http.header("Content-Type");
+  String etag = http.header("ETag");
   uint32_t total_size = http.header("Content-Length").toInt();
   ESP_LOGD(TAG, "Content Type: %s", content_type.c_str());
   ESP_LOGD(TAG, "Content Length: %d", total_size);
+  ESP_LOGD(TAG, "ETag: %s", etag.c_str());
+
+  if (etag != "" && etag == etag_) {
+    ESP_LOGI(TAG, "Image hasn't changed on server. Skipping download.");
+    http.end();
+    return;
+  }
 
 #ifdef ONLINE_IMAGE_PNG_SUPPORT
   if (format_ == ImageFormat::PNG) {
@@ -301,6 +310,7 @@ void OnlineImage::update() {
   size_t size = decoder->decode(http, stream, download_buffer);
   ESP_LOGI(TAG, "Decoded %d bytes", size);
   http.end();
+  etag_ = etag;
 
   data_start_ = buffer_;
 }
